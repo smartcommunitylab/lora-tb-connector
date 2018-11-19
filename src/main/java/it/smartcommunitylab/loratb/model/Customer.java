@@ -1,8 +1,8 @@
-package it.smartcommunitylab.loratb.ext.tb;
+package it.smartcommunitylab.loratb.model;
 
 import org.springframework.data.annotation.Id;
 
-public class TbCustomer {
+public class Customer {
 	@Id
 	private String id;
 	private String tenantId;

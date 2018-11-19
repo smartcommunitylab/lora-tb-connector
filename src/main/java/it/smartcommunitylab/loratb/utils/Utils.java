@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import it.smartcommunitylab.loratb.model.Device;
+
 public class Utils {
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private static ObjectMapper fullMapper = new ObjectMapper();
@@ -122,6 +124,10 @@ public class Utils {
 		coll.add(param);
 		coll.add(null);
 		return coll;
+	}
+	
+	public static String getDeviceId(Device device) {
+		return device.getLoraApplicationId() + "_" + device.getLoraDevEUI();
 	}
 	
 }

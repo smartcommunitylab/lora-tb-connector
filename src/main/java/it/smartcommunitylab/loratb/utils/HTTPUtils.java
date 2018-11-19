@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class HTTPUtils {
 
-	public static String get(String address, String token, String basicAuthUser, String basicAuthPassowrd)
+	public static String get(String address, String token, String headerKey, String basicAuthUser, String basicAuthPassowrd)
 			throws Exception {
 		StringBuffer response = new StringBuffer();
 
@@ -37,7 +37,7 @@ public class HTTPUtils {
 		}
 
 		if (token != null) {
-			conn.setRequestProperty("X-Authorization", "Bearer " + token);
+			conn.setRequestProperty(headerKey, "Bearer " + token);
 		}
 
 		// redirection checking
@@ -93,7 +93,7 @@ public class HTTPUtils {
 		return res;
 	}
 	
-	public static String post(String address, Object content, String token,
+	public static String post(String address, Object content, String token, String headerKey,
 			String basicAuthUser, String basicAuthPassowrd) throws Exception {
 		StringBuffer response = new StringBuffer();
 
@@ -115,7 +115,7 @@ public class HTTPUtils {
 		}
 		
 		if (token != null) {
-			conn.setRequestProperty("X-ACCESS-TOKEN", token);
+			conn.setRequestProperty(headerKey, "Bearer " + token);
 		}
 
 		String contentString = null;

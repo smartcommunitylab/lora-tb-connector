@@ -1,6 +1,6 @@
-package it.smartcommunitylab.loratb.ext.tb;
+package it.smartcommunitylab.loratb.model;
 
-public class TbLogin {
+public class ExtLogin {
 	private String username;
 	private String password;
 	

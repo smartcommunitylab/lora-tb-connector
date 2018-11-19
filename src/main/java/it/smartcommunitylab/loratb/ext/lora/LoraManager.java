@@ -1,4 +1,4 @@
-package it.smartcommunitylab.loratb.ext.tb;
+package it.smartcommunitylab.loratb.ext.lora;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,28 +15,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import it.smartcommunitylab.loratb.model.Customer;
+import it.smartcommunitylab.loratb.model.Application;
 import it.smartcommunitylab.loratb.model.Device;
 import it.smartcommunitylab.loratb.model.ExtLogin;
 import it.smartcommunitylab.loratb.utils.HTTPUtils;
 
 @Component
-public class ThingsBoardManager {
-	private static final transient Logger logger = LoggerFactory.getLogger(ThingsBoardManager.class);
+public class LoraManager {
+	private static final transient Logger logger = LoggerFactory.getLogger(LoraManager.class);
 	
-	@Value("${tb.endpoint}")
+	@Value("${lora.endpoint}")
 	private String endpoint;
 
-	@Value("${tb.user}")
+	@Value("${lora.user}")
 	private String user;
 
-	@Value("${tb.password}")
+	@Value("${lora.password}")
 	private String password;
 	
-	@Value("${tb.limit}")
+	@Value("${lora.limit}")
 	private int limit;
 	
-	@Value("${tb.header}")
+	@Value("${lora.header}")
 	private String headerKey;
 	
 	private ObjectMapper mapper = null;
@@ -55,93 +55,76 @@ public class ThingsBoardManager {
 	private boolean isTokenExpired() {
 		return (token == null);
 	}
-	
+
 	public String getToken() throws Exception {
-		String address = endpoint + "api/auth/login";
+		String address = endpoint + "api/internal/login";
 		ExtLogin login = new ExtLogin();
 		login.setUsername(user);
 		login.setPassword(password);
 		String json = HTTPUtils.post(address, login, null, null, null, null);
 		JsonNode node = mapper.readTree(json);
-		return node.get("token").asText();
+		return node.get("jwt").asText();
 	}
 	
-	public List<Customer> getCustomers() throws Exception {
-		List<Customer> result = new ArrayList<>();
+	public List<Application> getApplications() throws Exception {
+		List<Application> result = new ArrayList<>();
 		if(isTokenExpired()) {
 			token = getToken();
 		}
-		String address = endpoint + "api/customers?limit=" + limit;
+		String address = endpoint + "api/applications?limit=" + limit;
 		boolean hasNext = false;
 		do {
 			String json = HTTPUtils.get(address, token, headerKey, null, null);
 			JsonNode rootNode = mapper.readTree(json);
-			JsonNode dataNode = rootNode.get("data");
+			JsonNode dataNode = rootNode.get("result");
 			if(dataNode.isArray()) {
-				for (JsonNode customerNode : dataNode) {
-					String id = customerNode.get("id").get("id").asText();
-					String tenantId = customerNode.get("tenantId").get("id").asText();
-					String name = customerNode.get("name").asText();
-					Customer tbCustomer = new Customer();
-					tbCustomer.setId(id);
-					tbCustomer.setTenantId(tenantId);
-					tbCustomer.setName(name);
-					result.add(tbCustomer);
+				for (JsonNode appNode : dataNode) {
+					Application application = mapper.treeToValue(appNode, Application.class);
+					application.setAppId(appNode.get("id").asText());
+					result.add(application);
 				}
 			}
-			hasNext = rootNode.get("hasNext").asBoolean();
 		} while (hasNext);
 		if(logger.isInfoEnabled()) {
-			logger.info("getCustomers:" + result.size());
+			logger.info("getToken:" + result.size());
 		}
 		return result;
 	}
 	
-	public List<Device> getDevicesByCustomer(String customerId) throws Exception {
+	public List<Device> getDevicesByApp(String appId) throws Exception {
 		List<Device> result = new ArrayList<>();
 		if(isTokenExpired()) {
 			token = getToken();
 		}
-		String address = endpoint + "api/customer/" + customerId + "/devices?limit=" + limit;
+		String address = endpoint + "api/applications/" + appId + "/devices?limit=" + limit;
 		boolean hasNext = false;
 		do {
 			String json = HTTPUtils.get(address, token, headerKey, null, null);
 			JsonNode rootNode = mapper.readTree(json);
-			JsonNode dataNode = rootNode.get("data");
+			JsonNode dataNode = rootNode.get("result");
 			if(dataNode.isArray()) {
 				for (JsonNode deviceNode : dataNode) {
-					String id = deviceNode.get("id").get("id").asText();
-					String tenantId = deviceNode.get("tenantId").get("id").asText();
+					String loraDevEUI = deviceNode.get("devEUI").asText();
+					String loraApplicationId = deviceNode.get("applicationID").asText();
 					String name = deviceNode.get("name").asText();
-					String type = deviceNode.get("type").asText();
-					
-					String addressCred = endpoint + "api/device/" + id + "/credentials";
-					String jsonCred = HTTPUtils.get(addressCred, token, headerKey, null, null);
-					JsonNode credNode = mapper.readTree(jsonCred);
-					String credentialsType = credNode.get("credentialsType").asText();
-					String credentialsId = credNode.get("credentialsId").asText();
+					String loraProfileId = deviceNode.get("deviceProfileID").asText();
+					String loraProfileName = deviceNode.get("deviceProfileName").asText();
+					Double loraStatusBattery = deviceNode.get("deviceStatusBattery").asDouble();
 					
 					Device device = new Device();
-					device.setTbId(id);
-					device.setTbTenantId(tenantId);
+					device.setLoraDevEUI(loraDevEUI);
+					device.setLoraApplicationId(loraApplicationId);
 					device.setName(name);
-					device.setType(type);
-					device.setTbCredentialsId(credentialsId);
-					device.setTbCredentialsType(credentialsType);
+					device.setLoraProfileId(loraProfileId);
+					device.setLoraProfileName(loraProfileName);
+					device.setLoraStatusBattery(loraStatusBattery);
 					result.add(device);
 				}
 			}
-			hasNext = rootNode.get("hasNext").asBoolean();
 		} while (hasNext);
 		if(logger.isInfoEnabled()) {
-			logger.info(String.format("getDevicesByCustomer[%s]:%s", customerId, result.size()));
+			logger.info(String.format("getDevicesByApp[%s]:%s", appId, result.size()));
 		}
 		return result;
 	}
-	
-	public void addLoraDevice(Device device) throws Exception {
-		// TODO
-		
-	}
-
 }

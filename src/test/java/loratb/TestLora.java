@@ -10,33 +10,33 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import it.smartcommunitylab.loratb.core.DataManager;
-import it.smartcommunitylab.loratb.ext.tb.ThingsBoardManager;
+import it.smartcommunitylab.loratb.ext.lora.LoraManager;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestConfig.class})
 @TestPropertySource(locations= {"classpath:application.properties","classpath:log4j.properties"})
-public class TestTb {
+public class TestLora {
 	@Autowired
-	private ThingsBoardManager tbManager;
+	private LoraManager loraManager;
 	
 	@Autowired
 	private DataManager dataManager;
 	
 	@Test
 	public void getToken() throws Exception {
-		String token = tbManager.getToken();
+		String token = loraManager.getToken();
 		assertNotNull(token);
 		System.out.println("token:" + token);
 	}
 	
 	@Test
-	public void storeCustomers() throws Exception {
-		dataManager.storeTbCustomers();
+	public void storeApplications() throws Exception {
+		dataManager.storeLoraApplications();
 	}
 	
 	@Test
 	public void storeDevices() throws Exception {
-		dataManager.storeTbDevices();
+		dataManager.storeLoraDevices();
 	}
 	
 	
