@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import it.smartcommunitylab.loratb.model.Customer;
 import it.smartcommunitylab.loratb.model.Device;
@@ -139,9 +140,56 @@ public class ThingsBoardManager {
 		return result;
 	}
 	
-	public void addLoraDevice(Device device) throws Exception {
-		// TODO
+	public Device addDevice(String tenantId, String name, String type) throws Exception {
+		if(isTokenExpired()) {
+			token = getToken();
+		}
 		
+		ObjectNode tenantNode = mapper.createObjectNode();
+		tenantNode.put("id", tenantId);
+		tenantNode.put("entityType", "TENANT");
+		
+		ObjectNode deviceNode = mapper.createObjectNode();
+		deviceNode.put("name", name);
+		deviceNode.put("type", type);
+		deviceNode.put("id", (String) null);
+		deviceNode.set("tenantId", tenantNode);
+		
+		String json = mapper.writeValueAsString(deviceNode);
+		
+		String address = endpoint + "api/device";
+		String jsonResponse = HTTPUtils.post(address, json, token, headerKey, null, null);
+		JsonNode rootNode = mapper.readTree(jsonResponse);
+		
+		String id = rootNode.get("id").get("id").asText();
+		
+		String addressCred = endpoint + "api/device/" + id + "/credentials";
+		String jsonCred = HTTPUtils.get(addressCred, token, headerKey, null, null);
+		JsonNode credNode = mapper.readTree(jsonCred);
+		String credentialsType = credNode.get("credentialsType").asText();
+		String credentialsId = credNode.get("credentialsId").asText();
+		
+		Device newDevice = new Device();
+		newDevice.setTbId(id);
+		newDevice.setTbTenantId(tenantId);
+		newDevice.setName(name);
+		newDevice.setTbCredentialsId(credentialsId);
+		newDevice.setTbCredentialsType(credentialsType);
+		
+		return newDevice;
+	}
+	
+	public void sendTelemetry(Device device, JsonNode payload, long timestamp) throws Exception {
+		if(isTokenExpired()) {
+			token = getToken();
+		}
+		ObjectNode telemetryNode = mapper.createObjectNode();
+		telemetryNode.put("ts", timestamp);
+		telemetryNode.set("values", payload);
+		String json = mapper.writeValueAsString(telemetryNode);
+		
+		String address = endpoint + "api/v1/" + device.getTbCredentialsId() + "/telemetry";
+		HTTPUtils.post(address, json, token, headerKey, null, null);
 	}
 
 }

@@ -2,6 +2,9 @@ package loratb;
 
 import static org.junit.Assert.assertNotNull;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,8 @@ public class TestLora {
 	@Autowired
 	private DataManager dataManager;
 	
+	private CountDownLatch lock = new CountDownLatch(1);
+	
 	@Test
 	public void getToken() throws Exception {
 		String token = loraManager.getToken();
@@ -37,6 +42,16 @@ public class TestLora {
 	@Test
 	public void storeDevices() throws Exception {
 		dataManager.storeLoraDevices();
+	}
+	
+	@Test
+	public void allignDevices() throws Exception {
+		dataManager.allignLoraDevices();
+	}
+	
+	@Test
+	public void subscribeMqttMsg() throws Exception {
+		lock.await(60000*15, TimeUnit.MILLISECONDS);
 	}
 	
 	
