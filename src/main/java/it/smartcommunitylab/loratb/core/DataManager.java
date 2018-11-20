@@ -92,6 +92,7 @@ public class DataManager implements MqttMessageListener {
 	}
 	
 	private String getTbTenantId() {
+		//TODO store tenant conf somewhere
 		List<Customer> list = customerRepository.findAll();
 		if(list.size() > 0) {
 			return list.get(0).getTenantId();
@@ -138,9 +139,13 @@ public class DataManager implements MqttMessageListener {
 				Device deviceDb = deviceRepository.findByLoraDevEUI(device.getLoraApplicationId(), 
 						device.getLoraDevEUI());
 				if(deviceDb == null) {
+					device.setLoraApplicationName(application.getName());
+					device.setType(application.getName());
 					deviceRepository.save(device);
 				} else {
 					deviceDb.setName(device.getName());
+					deviceDb.setType(application.getName());
+					deviceDb.setLoraApplicationName(application.getName());
 					deviceDb.setLoraProfileId(device.getLoraProfileId());
 					deviceDb.setLoraProfileName(device.getLoraProfileName());
 					deviceDb.setLoraStatusBattery(device.getLoraStatusBattery());
@@ -150,7 +155,7 @@ public class DataManager implements MqttMessageListener {
 		}
 	}
 	
-	public void allignLoraDevices() throws Exception {
+	public void alignLoraDevices() throws Exception {
 		List<Device> devices = deviceRepository.findAll();
 		for (Device device : devices) {
 			// check lora device
@@ -162,7 +167,7 @@ public class DataManager implements MqttMessageListener {
 					continue;
 				}
 				Device tbDevice = tbManager.addDevice(getTbTenantId(), 
-						device.getName(), device.getLoraProfileName());
+						device.getName(), device.getType());
 				device.setTbId(tbDevice.getTbId());
 				device.setTbTenantId(tbDevice.getTbTenantId());
 				device.setTbCredentialsId(tbDevice.getTbCredentialsId());

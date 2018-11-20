@@ -46,13 +46,13 @@ public class TestLora {
 	
 	@Test
 	public void allignDevices() throws Exception {
-		dataManager.allignLoraDevices();
+		dataManager.alignLoraDevices();
 	}
 	
-	@Test
-	public void subscribeMqttMsg() throws Exception {
-		lock.await(60000*15, TimeUnit.MILLISECONDS);
-	}
+//	@Test
+//	public void subscribeMqttMsg() throws Exception {
+//		lock.await(60000*15, TimeUnit.MILLISECONDS);
+//	}
 	
 	
 }

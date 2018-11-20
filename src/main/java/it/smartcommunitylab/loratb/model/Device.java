@@ -12,6 +12,7 @@ public class Device {
 	private String tbCredentialsId;
 	private String tbCredentialsType;
 	private String loraApplicationId;
+	private String loraApplicationName;
 	private String loraDevEUI;
 	private String loraProfileId;
 	private String loraProfileName;
@@ -88,6 +89,12 @@ public class Device {
 	}
 	public void setId(String id) {
 		this.id = id;
+	}
+	public String getLoraApplicationName() {
+		return loraApplicationName;
+	}
+	public void setLoraApplicationName(String loraApplicationName) {
+		this.loraApplicationName = loraApplicationName;
 	}
 	
 }
