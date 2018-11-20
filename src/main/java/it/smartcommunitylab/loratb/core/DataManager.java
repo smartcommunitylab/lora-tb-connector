@@ -1,12 +1,15 @@
 package it.smartcommunitylab.loratb.core;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -27,6 +30,9 @@ import it.smartcommunitylab.loratb.utils.Utils;
 @Component
 public class DataManager implements MqttMessageListener {
 	private static final transient Logger logger = LoggerFactory.getLogger(DataManager.class);
+	
+	@Value("${lora.mqtt.threads}")
+	private int threads;
 			
 	@Autowired
 	private ThingsBoardManager tbManager;
@@ -48,6 +54,8 @@ public class DataManager implements MqttMessageListener {
 	
 	private ObjectMapper mapper = null;
 	
+	private ExecutorService executor;
+	
 	@PostConstruct
 	public void init() throws Exception {
 		mapper = new ObjectMapper();
@@ -55,12 +63,19 @@ public class DataManager implements MqttMessageListener {
 		mapper.configure(DeserializationFeature.READ_ENUMS_USING_TO_STRING, true);
 		mapper.configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, true);
 		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+		
+		executor = Executors.newFixedThreadPool(threads);
+		
 		mqttManager.setMessageListener(this);
 		mqttManager.init();
 	}
-
+	
 	@Override
-	public void onMessage(String topic, String message) {
+	public void onMessage(final String topic, final String message) {
+		executor.execute(() -> sendTelemetry(message));
+	}
+	
+	private void sendTelemetry(String message) {
 		try {
 			JsonNode rootNode = mapper.readTree(message);
 			String devEUI = rootNode.get("devEUI").asText();
@@ -176,5 +191,6 @@ public class DataManager implements MqttMessageListener {
 			}
 		}
 	}
+
 
 }

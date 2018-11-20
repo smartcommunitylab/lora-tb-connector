@@ -3,6 +3,7 @@ package it.smartcommunitylab.loratb.core;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,18 +26,18 @@ public class MqttManager {
 	
 	@Value("${lora.mqtt.topic}")
 	private String topic;
-	
+		
 	private IMqttClient mqttClient;
 	
 	private MqttMessageListener messageListener;
 	
 	public void init() throws Exception {
 		String clientId = Utils.getUUID();
-		mqttClient = new MqttClient(endpoint, clientId);
+		mqttClient = new MqttClient(endpoint, clientId, new MemoryPersistence());
 		MqttConnectOptions options = new MqttConnectOptions();
 		options.setAutomaticReconnect(true);
 		options.setCleanSession(true);
-		options.setConnectionTimeout(10);
+		options.setConnectionTimeout(15);
 		options.setUserName(user);
 		options.setPassword(password.toCharArray());
 		mqttClient.connect(options);
