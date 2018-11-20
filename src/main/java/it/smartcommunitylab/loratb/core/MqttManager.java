@@ -45,12 +45,11 @@ public class MqttManager {
 			logger.info("MQTT connected:" + endpoint);
 		}
 		mqttClient.subscribe(topic, (topic, msg) -> {
-			String payload = msg.toString();
 			if(logger.isDebugEnabled()) {
-				logger.debug("receiveMesage:" + payload);
+				logger.debug("receiveMesage:" + msg.getId());
 			}
 			if(messageListener != null) {
-				messageListener.onMessage(topic, payload);
+				messageListener.onMessage(topic, msg);
 			}
 		});
 	}

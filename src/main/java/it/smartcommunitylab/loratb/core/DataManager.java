@@ -6,6 +6,8 @@ import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,20 +66,25 @@ public class DataManager implements MqttMessageListener {
 		mapper.configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, true);
 		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 		
-		executor = Executors.newFixedThreadPool(threads);
+		BasicThreadFactory factory = new BasicThreadFactory.Builder()
+				.namingPattern("mqqt-msg-thread-%d")
+				.daemon(true)
+				.build();
+		executor = Executors.newFixedThreadPool(threads, factory);
 		
 		mqttManager.setMessageListener(this);
 		mqttManager.init();
 	}
 	
 	@Override
-	public void onMessage(final String topic, final String message) {
+	public void onMessage(final String topic, final MqttMessage message) {
 		executor.execute(() -> sendTelemetry(message));
 	}
 	
-	private void sendTelemetry(String message) {
+	private void sendTelemetry(MqttMessage message) {
 		try {
-			JsonNode rootNode = mapper.readTree(message);
+			String payload = message.toString();
+			JsonNode rootNode = mapper.readTree(payload);
 			String devEUI = rootNode.get("devEUI").asText();
 			String appId = rootNode.get("applicationID").asText();
 			Device device = deviceRepository.findByLoraDevEUI(appId, devEUI);
