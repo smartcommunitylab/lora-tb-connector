@@ -47,6 +47,8 @@ public class AdminController {
 		if(logger.isInfoEnabled()) {
 			logger.info("alignLoraDevices: align Lora devices");
 		}
+		dataManager.storeLoraApplications();
+		dataManager.storeLoraDevices();
 		dataManager.alignLoraDevices();
 	}
 }
