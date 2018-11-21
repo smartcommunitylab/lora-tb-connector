@@ -236,8 +236,7 @@ public class DataManager implements MqttMessageListener {
 						// device not found
 						if(e.getResponseCode() == 404) {
 							// create a new device in TB
-							Device tbDevice = tbManager.addDevice(getTbTenantId(), 
-									device.getName(), device.getType());
+							Device tbDevice = tbManager.addDevice(getTbTenantId(), device);
 							device.setTbId(tbDevice.getTbId());
 							device.setTbTenantId(tbDevice.getTbTenantId());
 							device.setTbCredentialsId(tbDevice.getTbCredentialsId());
@@ -250,8 +249,7 @@ public class DataManager implements MqttMessageListener {
 				} else {
 					// create a new device in TB
 					try {
-						Device tbDevice = tbManager.addDevice(getTbTenantId(), 
-								device.getName(), device.getType());
+						Device tbDevice = tbManager.addDevice(getTbTenantId(), device);
 						device.setTbId(tbDevice.getTbId());
 						device.setTbTenantId(tbDevice.getTbTenantId());
 						device.setTbCredentialsId(tbDevice.getTbCredentialsId());

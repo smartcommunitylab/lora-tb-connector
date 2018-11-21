@@ -76,7 +76,8 @@ public class HTTPUtils {
 		}
 
 		if (conn.getResponseCode() >= 400) {
-			throw new HttpException(conn.getResponseCode(), "Failed : HTTP error for:" + address);
+			throw new HttpException(conn.getResponseCode(), 
+					"Failed HTTP error for " + address + ":" + conn.getResponseCode());
 		}
 
 		BufferedReader br = new BufferedReader(
@@ -134,7 +135,8 @@ public class HTTPUtils {
 		out.close();		
 		
 		if (conn.getResponseCode() >= 300) {
-			throw new HttpException(conn.getResponseCode(), "Failed : HTTP error for:" + address);
+			throw new HttpException(conn.getResponseCode(), 
+					"Failed HTTP error for " + address + ":" + conn.getResponseCode());
 		}
 
 		BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), Charset.defaultCharset()));

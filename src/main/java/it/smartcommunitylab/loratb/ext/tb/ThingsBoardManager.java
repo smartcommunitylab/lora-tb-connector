@@ -199,7 +199,7 @@ public class ThingsBoardManager {
 		return result;
 	}
 	
-	public Device addDevice(String tenantId, String name, String type) throws Exception {
+	public Device addDevice(String tenantId, Device device) throws Exception {
 		if(isTokenExpired()) {
 			token = getToken();
 		}
@@ -209,8 +209,8 @@ public class ThingsBoardManager {
 		tenantNode.put("entityType", "TENANT");
 		
 		ObjectNode deviceNode = mapper.createObjectNode();
-		deviceNode.put("name", name);
-		deviceNode.put("type", type);
+		deviceNode.put("name", device.getName());
+		deviceNode.put("type", device.getType());
 		deviceNode.put("id", (String) null);
 		deviceNode.set("tenantId", tenantNode);
 		
@@ -228,13 +228,20 @@ public class ThingsBoardManager {
 		String credentialsType = credNode.get("credentialsType").asText();
 		String credentialsId = credNode.get("credentialsId").asText();
 		
+		ObjectNode attributesNode = mapper.createObjectNode();
+		attributesNode.put("loraApplicationId", device.getLoraApplicationId());
+		attributesNode.put("loraDevEUI", device.getLoraDevEUI());
+		String jsonAttr = mapper.writeValueAsString(attributesNode);
+		
+		String addressAttr = endpoint + "api/v1/" + credentialsId + "/attributes";
+		HTTPUtils.post(addressAttr, jsonAttr, token, headerKey, null, null);
+		
 		Device newDevice = new Device();
 		newDevice.setTbId(id);
 		newDevice.setTbTenantId(tenantId);
-		newDevice.setName(name);
+		newDevice.setName(device.getName());
 		newDevice.setTbCredentialsId(credentialsId);
 		newDevice.setTbCredentialsType(credentialsType);
-		
 		return newDevice;
 	}
 	
