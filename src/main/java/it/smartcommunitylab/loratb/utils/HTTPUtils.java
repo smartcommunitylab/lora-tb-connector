@@ -134,7 +134,7 @@ public class HTTPUtils {
 		out.close();		
 		
 		if (conn.getResponseCode() >= 300) {
-			throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			throw new HttpException(conn.getResponseCode(), "Failed : HTTP error for:" + address);
 		}
 
 		BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), Charset.defaultCharset()));
