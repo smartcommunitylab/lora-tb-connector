@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import it.smartcommunitylab.loratb.exception.HttpException;
 import it.smartcommunitylab.loratb.ext.lora.LoraManager;
 import it.smartcommunitylab.loratb.ext.tb.ThingsBoardManager;
 import it.smartcommunitylab.loratb.model.Application;
@@ -223,12 +224,26 @@ public class DataManager implements MqttMessageListener {
 				if(Utils.isNotEmpty(device.getTbTenantId()) &&
 						Utils.isNotEmpty(device.getTbId())) {
 					try {
+						// get existing TB device
 						Device tbDevice = tbManager.getDeviceById(device.getTbId());
+						// update local fields
 						device.setTbId(tbDevice.getTbId());
 						device.setTbTenantId(tbDevice.getTbTenantId());
 						device.setTbCredentialsId(tbDevice.getTbCredentialsId());
 						device.setTbCredentialsType(tbDevice.getTbCredentialsType());
 						deviceRepository.save(device);
+					} catch (HttpException e) {
+						// device not found
+						if(e.getResponseCode() == 404) {
+							// create a new device in TB
+							Device tbDevice = tbManager.addDevice(getTbTenantId(), 
+									device.getName(), device.getType());
+							device.setTbId(tbDevice.getTbId());
+							device.setTbTenantId(tbDevice.getTbTenantId());
+							device.setTbCredentialsId(tbDevice.getTbCredentialsId());
+							device.setTbCredentialsType(tbDevice.getTbCredentialsType());
+							deviceRepository.save(device);
+						}
 					} catch (Exception e) {
 						logger.warn(String.format("alignLoraDevices exception:%s", e.getMessage()));
 					}

@@ -12,6 +12,8 @@ import java.util.Base64;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import it.smartcommunitylab.loratb.exception.HttpException;
+
 public class HTTPUtils {
 
 	public static String get(String address, String token, String headerKey, String basicAuthUser, String basicAuthPassowrd)
@@ -74,7 +76,7 @@ public class HTTPUtils {
 		}
 
 		if (conn.getResponseCode() >= 400) {
-			throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			throw new HttpException(conn.getResponseCode(), "Failed : HTTP error for:" + address);
 		}
 
 		BufferedReader br = new BufferedReader(
