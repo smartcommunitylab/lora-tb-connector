@@ -20,11 +20,11 @@ public class AdminController {
 		if(logger.isInfoEnabled()) {
 			logger.info("initDataset");
 		}
-		// get TB customers
+		// get TB user
 		if(logger.isInfoEnabled()) {
-			logger.info("initDataset: get TB customers");
+			logger.info("initDataset: get TB user");
 		}
-		dataManager.storeTbCustomers();
+		dataManager.storeTbUser();
 		// get Lora applications
 		if(logger.isInfoEnabled()) {
 			logger.info("initDataset: get Lora applications");

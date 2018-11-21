@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- By default, encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+    <encoder>
+      <!-- <pattern>%d %p [%C{1}-%t] - %m%n</pattern> -->
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread] %logger: %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>/home/dev/logs/lora-tb/lora-tb.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>lora-tb.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+      <!-- keep 30 days' worth of history capped at 3GB total size -->
+      <maxHistory>30</maxHistory>
+      <totalSizeCap>3GB</totalSizeCap>
+    </rollingPolicy>
+
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread] %logger: %msg%n</pattern>
+    </encoder>
+  </appender> 
+  
+  <root level="INFO">
+    <appender-ref ref="FILE"/>
+    <appender-ref ref="STDOUT" />
+  </root>
+
+  <logger name="it.smartcommunitylab" level="INFO" additivity="false">
+    <appender-ref ref="FILE" />
+    <appender-ref ref="STDOUT" />
+  </logger>	
+
+  <logger name="org.springframework.security" level="ERROR" additivity="false">
+    <appender-ref ref="FILE" />
+  </logger>
+
+  <logger name="org.springframework" level="INFO" additivity="false">
+    <appender-ref ref="FILE" />
+  </logger>
+
+  <logger name="org.mongodb" level="WARN" additivity="false">
+    <appender-ref ref="FILE" />
+  </logger>
+
+  <logger name="org.eclipse.jetty" level="INFO" additivity="false">
+    <appender-ref ref="FILE" />
+  </logger>		
+
+</configuration>

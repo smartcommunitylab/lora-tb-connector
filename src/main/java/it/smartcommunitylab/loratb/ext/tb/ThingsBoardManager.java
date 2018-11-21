@@ -19,7 +19,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import it.smartcommunitylab.loratb.model.Customer;
 import it.smartcommunitylab.loratb.model.Device;
 import it.smartcommunitylab.loratb.model.ExtLogin;
+import it.smartcommunitylab.loratb.model.User;
 import it.smartcommunitylab.loratb.utils.HTTPUtils;
+import it.smartcommunitylab.loratb.utils.Utils;
 
 @Component
 public class ThingsBoardManager {
@@ -44,6 +46,8 @@ public class ThingsBoardManager {
 	
 	private String token;
 	
+	private long tokenExp;
+	
 	@PostConstruct
 	public void init() {
 		mapper = new ObjectMapper();
@@ -53,18 +57,45 @@ public class ThingsBoardManager {
 		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 	}
 	
-	private boolean isTokenExpired() {
-		return (token == null);
+	private synchronized boolean isTokenExpired() {
+		if(token == null) {
+			return true;
+		}
+		return (System.currentTimeMillis() > tokenExp);
 	}
 	
-	public String getToken() throws Exception {
+	public synchronized String getToken() throws Exception {
 		String address = endpoint + "api/auth/login";
 		ExtLogin login = new ExtLogin();
 		login.setUsername(user);
 		login.setPassword(password);
 		String json = HTTPUtils.post(address, login, null, null, null, null);
 		JsonNode node = mapper.readTree(json);
-		return node.get("token").asText();
+		String jwtToken = node.get("token").asText();
+		String jwtBody = Utils.getJWTBody(jwtToken);
+		JsonNode nodeBody = mapper.readTree(jwtBody);
+		tokenExp = nodeBody.get("exp").asLong() * 1000;
+		return jwtToken;
+	}
+	
+	public User getUser() throws Exception {
+		if(isTokenExpired()) {
+			token = getToken();
+		}
+		String address = endpoint + "api/auth/user";
+		String json = HTTPUtils.get(address, token, headerKey, null, null);
+		JsonNode rootNode = mapper.readTree(json);
+		String id = rootNode.get("id").get("id").asText();
+		String tenantId = rootNode.get("tenantId").get("id").asText();
+		String name = rootNode.get("name").asText();
+		String email = rootNode.get("email").asText();
+		
+		User user = new User();
+		user.setTbId(id);
+		user.setTbTenantId(tenantId);
+		user.setTbName(name);
+		user.setTbEmail(email);
+		return user;
 	}
 	
 	public List<Customer> getCustomers() throws Exception {
@@ -96,6 +127,34 @@ public class ThingsBoardManager {
 			logger.info("getCustomers:" + result.size());
 		}
 		return result;
+	}
+	
+	public Device getDeviceById(String deviceId) throws Exception {
+		if(isTokenExpired()) {
+			token = getToken();
+		}
+		String address = endpoint + "api/device/" + deviceId;
+		String jsonDevice = HTTPUtils.get(address, token, headerKey, null, null);
+		JsonNode deviceNode = mapper.readTree(jsonDevice);
+		String id = deviceNode.get("id").get("id").asText();
+		String tenantId = deviceNode.get("tenantId").get("id").asText();
+		String name = deviceNode.get("name").asText();
+		String type = deviceNode.get("type").asText();		
+
+		String addressCred = endpoint + "api/device/" + id + "/credentials";
+		String jsonCred = HTTPUtils.get(addressCred, token, headerKey, null, null);
+		JsonNode credNode = mapper.readTree(jsonCred);
+		String credentialsType = credNode.get("credentialsType").asText();
+		String credentialsId = credNode.get("credentialsId").asText();
+		
+		Device device = new Device();
+		device.setTbId(id);
+		device.setTbTenantId(tenantId);
+		device.setName(name);
+		device.setType(type);
+		device.setTbCredentialsId(credentialsId);
+		device.setTbCredentialsType(credentialsType);
+		return device;
 	}
 	
 	public List<Device> getDevicesByCustomer(String customerId) throws Exception {

@@ -17,7 +17,7 @@ import it.smartcommunitylab.loratb.ext.lora.LoraManager;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestConfig.class})
-@TestPropertySource(locations= {"classpath:application.properties","classpath:log4j.properties"})
+@TestPropertySource(locations= {"classpath:application.properties"})
 public class TestLora {
 	@Autowired
 	private LoraManager loraManager;

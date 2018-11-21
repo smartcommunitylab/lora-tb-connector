@@ -1,6 +1,7 @@
 package it.smartcommunitylab.loratb.core;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,9 +25,11 @@ import it.smartcommunitylab.loratb.ext.tb.ThingsBoardManager;
 import it.smartcommunitylab.loratb.model.Application;
 import it.smartcommunitylab.loratb.model.Customer;
 import it.smartcommunitylab.loratb.model.Device;
+import it.smartcommunitylab.loratb.model.User;
 import it.smartcommunitylab.loratb.repository.ApplicationRepository;
 import it.smartcommunitylab.loratb.repository.CustomerRepository;
 import it.smartcommunitylab.loratb.repository.DeviceRepository;
+import it.smartcommunitylab.loratb.repository.UserRepository;
 import it.smartcommunitylab.loratb.utils.Utils;
 
 @Component
@@ -53,6 +56,9 @@ public class DataManager implements MqttMessageListener {
 	
 	@Autowired
 	private ApplicationRepository applicationRepository;
+	
+	@Autowired
+	private UserRepository userRepository;
 	
 	private ObjectMapper mapper = null;
 	
@@ -90,7 +96,7 @@ public class DataManager implements MqttMessageListener {
 			Device device = deviceRepository.findByLoraDevEUI(appId, devEUI);
 			if(device == null) {
 				if(logger.isInfoEnabled()) {
-					logger.info(String.format("onMessage - device not found: %s / %s", appId, devEUI));
+					logger.info(String.format("sendTelemetry - device not found: %s / %s", appId, devEUI));
 				}
 				return;
 			}
@@ -101,31 +107,53 @@ public class DataManager implements MqttMessageListener {
 				long timestamp = rootNode.get("timestamp").asLong();
 				JsonNode objectNode = rootNode.get("object");
 				tbManager.sendTelemetry(device, objectNode, timestamp);
+				//TODO move to debug level
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("sendTelemetry - sent data to device: %s / %s", appId, devEUI));
+				}				
 			} else {
 				if(logger.isInfoEnabled()) {
-					logger.info(String.format("onMessage - device not connected to TB: %s / %s", appId, devEUI));
+					logger.info(String.format("sendTelemetry - device not connected to TB: %s / %s", appId, devEUI));
 				}
 			}
 		} catch (Exception e) {
 			if(logger.isInfoEnabled()) {
-				logger.info(String.format("onMessage exception:%s", e.getMessage()));
+				logger.info(String.format("sendTelemetry exception:%s", e.getMessage()));
 			}
 		}
 	}
 	
 	private String getTbTenantId() {
-		//TODO store tenant conf somewhere
-		List<Customer> list = customerRepository.findAll();
+		List<User> list = userRepository.findAll();
 		if(list.size() > 0) {
-			return list.get(0).getTenantId();
+			return list.get(0).getTbTenantId();
 		}
 		return null;
 	}
 	
+	public void storeTbUser() throws Exception {
+		User user = tbManager.getUser();
+		Optional<User> userOpt = userRepository.findById(user.getTbId());
+		if(userOpt.isPresent()) {
+			User userDb = userOpt.get();
+			userDb.setTbTenantId(user.getTbTenantId());
+			userDb.setTbEmail(user.getTbEmail());
+			userDb.setTbName(user.getTbName());
+			userRepository.save(userDb);
+		} else {
+			userRepository.deleteAll();
+			userRepository.save(user);
+		}
+	}
+	
 	public void storeTbCustomers() throws Exception {
 		List<Customer> customers = tbManager.getCustomers();
-		customerRepository.deleteAll();
-		customerRepository.saveAll(customers);
+		for (Customer customer : customers) {
+			Optional<Customer> optional = customerRepository.findById(customer.getId());
+			if(!optional.isPresent()) {
+				customerRepository.save(customer);
+			}
+		}
 	}
 	
 	public void storeTbDevices() throws Exception {
@@ -149,30 +177,38 @@ public class DataManager implements MqttMessageListener {
 	
 	public void storeLoraApplications() throws Exception {
 		List<Application> applications = loraManager.getApplications();
-		applicationRepository.deleteAll();
-		applicationRepository.saveAll(applications);
+		for (Application application : applications) {
+			Application applicationDb = applicationRepository.findByAppId(application.getAppId());
+			if(applicationDb == null) {
+				applicationRepository.save(application);
+			}
+		}
 	}
 	
 	public void storeLoraDevices() throws Exception {
 		List<Application> applications = applicationRepository.findAll();
 		for (Application application : applications) {
-			List<Device> devices = loraManager.getDevicesByApp(application.getAppId());
-			for (Device device : devices) {
-				Device deviceDb = deviceRepository.findByLoraDevEUI(device.getLoraApplicationId(), 
-						device.getLoraDevEUI());
-				if(deviceDb == null) {
-					device.setLoraApplicationName(application.getName());
-					device.setType(application.getName());
-					deviceRepository.save(device);
-				} else {
-					deviceDb.setName(device.getName());
-					deviceDb.setType(application.getName());
-					deviceDb.setLoraApplicationName(application.getName());
-					deviceDb.setLoraProfileId(device.getLoraProfileId());
-					deviceDb.setLoraProfileName(device.getLoraProfileName());
-					deviceDb.setLoraStatusBattery(device.getLoraStatusBattery());
-					deviceRepository.save(deviceDb);
-				}
+			try {
+				List<Device> devices = loraManager.getDevicesByApp(application.getAppId());
+				for (Device device : devices) {
+					Device deviceDb = deviceRepository.findByLoraDevEUI(device.getLoraApplicationId(), 
+							device.getLoraDevEUI());
+					if(deviceDb == null) {
+						device.setLoraApplicationName(application.getName());
+						device.setType(application.getName());
+						deviceRepository.save(device);
+					} else {
+						deviceDb.setName(device.getName());
+						deviceDb.setType(application.getName());
+						deviceDb.setLoraApplicationName(application.getName());
+						deviceDb.setLoraProfileId(device.getLoraProfileId());
+						deviceDb.setLoraProfileName(device.getLoraProfileName());
+						deviceDb.setLoraStatusBattery(device.getLoraStatusBattery());
+						deviceRepository.save(deviceDb);
+					}
+				}				
+			} catch (Exception e) {
+				logger.warn(String.format("storeLoraDevices exception:%s", e.getMessage()));
 			}
 		}
 	}
@@ -186,18 +222,32 @@ public class DataManager implements MqttMessageListener {
 				// check if exists in tb
 				if(Utils.isNotEmpty(device.getTbTenantId()) &&
 						Utils.isNotEmpty(device.getTbId())) {
-					continue;
+					try {
+						Device tbDevice = tbManager.getDeviceById(device.getTbId());
+						device.setTbId(tbDevice.getTbId());
+						device.setTbTenantId(tbDevice.getTbTenantId());
+						device.setTbCredentialsId(tbDevice.getTbCredentialsId());
+						device.setTbCredentialsType(tbDevice.getTbCredentialsType());
+						deviceRepository.save(device);
+					} catch (Exception e) {
+						logger.warn(String.format("alignLoraDevices exception:%s", e.getMessage()));
+					}
+				} else {
+					// create a new device in TB
+					try {
+						Device tbDevice = tbManager.addDevice(getTbTenantId(), 
+								device.getName(), device.getType());
+						device.setTbId(tbDevice.getTbId());
+						device.setTbTenantId(tbDevice.getTbTenantId());
+						device.setTbCredentialsId(tbDevice.getTbCredentialsId());
+						device.setTbCredentialsType(tbDevice.getTbCredentialsType());
+						deviceRepository.save(device);
+					} catch (Exception e) {
+						logger.warn(String.format("alignLoraDevices exception:%s", e.getMessage()));
+					}
 				}
-				Device tbDevice = tbManager.addDevice(getTbTenantId(), 
-						device.getName(), device.getType());
-				device.setTbId(tbDevice.getTbId());
-				device.setTbTenantId(tbDevice.getTbTenantId());
-				device.setTbCredentialsId(tbDevice.getTbCredentialsId());
-				device.setTbCredentialsType(tbDevice.getTbCredentialsType());
-				deviceRepository.save(device);
 			}
 		}
 	}
-
 
 }

@@ -8,8 +8,7 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
-
-import org.apache.tomcat.util.codec.binary.Base64;
+import java.util.Base64;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,7 +30,7 @@ public class HTTPUtils {
 
 		if (Utils.isNotEmpty(basicAuthUser) && Utils.isNotEmpty(basicAuthPassowrd)) {
 			String authString = basicAuthUser + ":" + basicAuthPassowrd;
-			byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
+			byte[] authEncBytes = Base64.getEncoder().encode(authString.getBytes());
 			String authStringEnc = new String(authEncBytes);
 			conn.setRequestProperty("Authorization", "Basic " + authStringEnc);
 		}
@@ -57,7 +56,7 @@ public class HTTPUtils {
 				
 				if (Utils.isNotEmpty(basicAuthUser) && Utils.isNotEmpty(basicAuthPassowrd)) {
 					String authString = basicAuthUser + ":" + basicAuthPassowrd;
-					byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
+					byte[] authEncBytes = Base64.getEncoder().encode(authString.getBytes());
 					String authStringEnc = new String(authEncBytes);
 					conn.setRequestProperty("Authorization", "Basic " + authStringEnc);
 				}
@@ -109,7 +108,7 @@ public class HTTPUtils {
 		
 		if(Utils.isNotEmpty(basicAuthUser) && Utils.isNotEmpty(basicAuthPassowrd)) {
 			String authString = basicAuthUser + ":" + basicAuthPassowrd;
-			byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
+			byte[] authEncBytes = Base64.getEncoder().encode(authString.getBytes());
 			String authStringEnc = new String(authEncBytes);
 			conn.setRequestProperty("Authorization", "Basic " + authStringEnc);
 		}

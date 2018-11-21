@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -109,6 +110,13 @@ public class Utils {
 	
 	public static Date parseDate(String stringDate) throws ParseException {
 		return sdf.parse(stringDate);
+	}
+	
+	public static String getJWTBody(String jwtToken) {
+    String[] split_string = jwtToken.split("\\.");
+    String base64EncodedBody = split_string[1];
+    String body = new String(Base64.getDecoder().decode(base64EncodedBody));
+    return body;
 	}
 	
 	public static String formatDate(Date date) {

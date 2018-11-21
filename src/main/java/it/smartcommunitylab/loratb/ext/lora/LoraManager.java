@@ -19,6 +19,7 @@ import it.smartcommunitylab.loratb.model.Application;
 import it.smartcommunitylab.loratb.model.Device;
 import it.smartcommunitylab.loratb.model.ExtLogin;
 import it.smartcommunitylab.loratb.utils.HTTPUtils;
+import it.smartcommunitylab.loratb.utils.Utils;
 
 @Component
 public class LoraManager {
@@ -43,6 +44,8 @@ public class LoraManager {
 	
 	private String token;
 	
+	private long tokenExp;
+	
 	@PostConstruct
 	public void init() {
 		mapper = new ObjectMapper();
@@ -52,18 +55,25 @@ public class LoraManager {
 		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 	}
 	
-	private boolean isTokenExpired() {
-		return (token == null);
+	private synchronized boolean isTokenExpired() {
+		if(token == null) {
+			return true;
+		}
+		return (System.currentTimeMillis() > tokenExp);
 	}
 
-	public String getToken() throws Exception {
+	public synchronized String getToken() throws Exception {
 		String address = endpoint + "api/internal/login";
 		ExtLogin login = new ExtLogin();
 		login.setUsername(user);
 		login.setPassword(password);
 		String json = HTTPUtils.post(address, login, null, null, null, null);
 		JsonNode node = mapper.readTree(json);
-		return node.get("jwt").asText();
+		String jwtToken = node.get("jwt").asText();
+		String jwtBody = Utils.getJWTBody(jwtToken);
+		JsonNode nodeBody = mapper.readTree(jwtBody);
+		tokenExp = nodeBody.get("exp").asLong() * 1000;
+		return jwtToken;
 	}
 	
 	public List<Application> getApplications() throws Exception {
