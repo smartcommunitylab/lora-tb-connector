@@ -92,29 +92,35 @@ public class DataManager implements MqttMessageListener {
 		try {
 			String payload = message.toString();
 			JsonNode rootNode = mapper.readTree(payload);
-			String devEUI = rootNode.get("devEUI").asText();
-			String appId = rootNode.get("applicationID").asText();
-			Device device = deviceRepository.findByLoraDevEUI(appId, devEUI);
-			if(device == null) {
-				if(logger.isInfoEnabled()) {
-					logger.info(String.format("sendTelemetry - device not found: %s / %s", appId, devEUI));
+			if(rootNode.hasNonNull("object")) {
+				String devEUI = rootNode.get("devEUI").asText();
+				String appId = rootNode.get("applicationID").asText();
+				Device device = deviceRepository.findByLoraDevEUI(appId, devEUI);
+				if(device == null) {
+					if(logger.isInfoEnabled()) {
+						logger.info(String.format("sendTelemetry - device not found: %s / %s", appId, devEUI));
+					}
+					return;
 				}
-				return;
-			}
-			// check if exists in tb
-			if(Utils.isNotEmpty(device.getTbTenantId()) &&
-					Utils.isNotEmpty(device.getTbId())) {
-				//send telemetry
-				long timestamp = rootNode.get("timestamp").asLong();
-				JsonNode objectNode = rootNode.get("object");
-				tbManager.sendTelemetry(device, objectNode, timestamp);
-				//TODO move to debug level
-				if(logger.isInfoEnabled()) {
-					logger.info(String.format("sendTelemetry - sent data to device: %s / %s", appId, devEUI));
-				}				
+				// check if exists in tb
+				if(Utils.isNotEmpty(device.getTbTenantId()) &&
+						Utils.isNotEmpty(device.getTbId())) {
+					//send telemetry
+					long timestamp = rootNode.get("timestamp").asLong();
+					JsonNode objectNode = rootNode.get("object");
+					tbManager.sendTelemetry(device, objectNode, timestamp);
+					//TODO move to debug level
+					if(logger.isInfoEnabled()) {
+						logger.info(String.format("sendTelemetry - sent data to device: %s / %s", appId, devEUI));
+					}				
+				} else {
+					if(logger.isInfoEnabled()) {
+						logger.info(String.format("sendTelemetry - device not connected to TB: %s / %s", appId, devEUI));
+					}
+				}
 			} else {
 				if(logger.isInfoEnabled()) {
-					logger.info(String.format("sendTelemetry - device not connected to TB: %s / %s", appId, devEUI));
+					logger.info("sendTelemetry - object field not found");
 				}
 			}
 		} catch (Exception e) {
