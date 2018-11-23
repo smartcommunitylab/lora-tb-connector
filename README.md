@@ -43,6 +43,6 @@ When the component is running, you should perform a first import of data from Lo
 
 `curl http://127.0.0.1:5050/lora-tb/admin/init`
 
-You can force the device alignement procedure by calling the following HTTP endpoint
+You can force the device alignment procedure by calling the following HTTP endpoint
 
 `curl http://127.0.0.1:5050/lora-tb/admin/lora/device/refresh`
