@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -215,7 +216,7 @@ public class DataManager implements MqttMessageListener {
 					}
 				}				
 			} catch (Exception e) {
-				logger.warn(String.format("storeLoraDevices exception:%s", e.getMessage()));
+				logger.error(String.format("storeLoraDevices exception:%s", e.getMessage()));
 			}
 		}
 	}
@@ -250,7 +251,7 @@ public class DataManager implements MqttMessageListener {
 							deviceRepository.save(device);
 						}
 					} catch (Exception e) {
-						logger.warn(String.format("alignLoraDevices exception:%s", e.getMessage()));
+						logger.error(String.format("alignLoraDevices exception:%s", e.getMessage()));
 					}
 				} else {
 					// create a new device in TB
@@ -262,10 +263,24 @@ public class DataManager implements MqttMessageListener {
 						device.setTbCredentialsType(tbDevice.getTbCredentialsType());
 						deviceRepository.save(device);
 					} catch (Exception e) {
-						logger.warn(String.format("alignLoraDevices exception:%s", e.getMessage()));
+						logger.error(String.format("alignLoraDevices exception:%s", e.getMessage()));
 					}
 				}
 			}
+		}
+	}
+	
+	@Scheduled(cron = "${cronexp}")
+	public void refreshLoraDevices() {
+		if(logger.isInfoEnabled()) {
+			logger.info("refreshLoraDevices started");
+		}
+		try {
+			storeLoraApplications();
+			storeLoraDevices();
+			alignLoraDevices();
+		} catch (Exception e) {
+			logger.error(String.format("refreshLoraDevices exception:%s", e.getMessage()));
 		}
 	}
 
