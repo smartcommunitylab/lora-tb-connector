@@ -93,9 +93,9 @@ public class DataManager implements MqttMessageListener {
 		try {
 			String payload = message.toString();
 			JsonNode rootNode = mapper.readTree(payload);
+			String devEUI = rootNode.get("devEUI").asText();
+			String appId = rootNode.get("applicationID").asText();
 			if(rootNode.hasNonNull("object")) {
-				String devEUI = rootNode.get("devEUI").asText();
-				String appId = rootNode.get("applicationID").asText();
 				Device device = deviceRepository.findByLoraDevEUI(appId, devEUI);
 				if(device == null) {
 					if(logger.isInfoEnabled()) {
@@ -121,7 +121,7 @@ public class DataManager implements MqttMessageListener {
 				}
 			} else {
 				if(logger.isInfoEnabled()) {
-					logger.info("sendTelemetry - object field not found");
+					logger.info(String.format("sendTelemetry - object field not found: %s / %s", appId, devEUI));
 				}
 			}
 		} catch (Exception e) {

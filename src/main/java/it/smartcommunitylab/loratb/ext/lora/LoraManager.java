@@ -96,7 +96,7 @@ public class LoraManager {
 			}
 		} while (hasNext);
 		if(logger.isInfoEnabled()) {
-			logger.info("getToken:" + result.size());
+			logger.info("getApplications:" + result.size());
 		}
 		return result;
 	}
