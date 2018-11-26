@@ -25,7 +25,9 @@ In this file you can set several properties:
   * **mqtt.endpoint** : the user password
   * **mqtt.topic** : the topic for MQTT message listening (`#` is a wildcard for every messages) 
   * **mqtt.threads** : number of threads that can manage the messages dispatcing
+* **cronexp** : a cron expression for scheduling the device alignment procedure. For example `0 */5 * * * *` starts the task at second 0, every 5 minutes of every hour.
 
+The component start a subscription to the Lora Server MQTT endpoint, using the topic arguments. When it retrives an uplink application payload message extracts the `object` field (so you should define a payload decoder function inside the application configuration in Lora Server, that decodes the raw data to a JSON object), and send this object as a new telemetry for the related ThingsBoard device.
 
 ## 3. Execution
 The component is a Java Spring Boot app. You can use Maven tool in order to compile and run the application.
@@ -41,6 +43,6 @@ When the component is running, you should perform a first import of data from Lo
 
 `curl http://127.0.0.1:5050/lora-tb/admin/init`
 
-You can force the device alignement procedure by calling the following HTTP endpoint
+You can force the device alignment procedure by calling the following HTTP endpoint
 
 `curl http://127.0.0.1:5050/lora-tb/admin/lora/device/refresh`
