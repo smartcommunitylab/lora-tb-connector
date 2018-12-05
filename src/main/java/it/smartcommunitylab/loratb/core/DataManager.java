@@ -110,7 +110,7 @@ public class DataManager implements MqttMessageListener {
 					long timestamp = rootNode.get("timestamp").asLong();
 					JsonNode objectNode = rootNode.get("object");
 					tbManager.sendTelemetry(device, objectNode, timestamp);
-					//TODO move to debug level
+					//TODO move log to debug level
 					if(logger.isInfoEnabled()) {
 						logger.info(String.format("sendTelemetry - sent data to device: %s / %s", appId, devEUI));
 					}				

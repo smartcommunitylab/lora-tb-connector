@@ -106,7 +106,7 @@ public class LoraManager {
 		if(isTokenExpired()) {
 			token = getToken();
 		}
-		String address = endpoint + "api/applications/" + appId + "/devices?limit=" + limit;
+		String address = endpoint + "api/devices?applicationID=" + appId + "&limit=" + limit;
 		boolean hasNext = false;
 		do {
 			String json = HTTPUtils.get(address, token, headerKey, null, null);
