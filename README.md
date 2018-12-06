@@ -41,8 +41,8 @@ To run the application, run the jar that you can find in the target folder.
 
 When the component is running, you should perform a first import of data from Lora server, calling the following HTTP endpoint
 
-`curl http://127.0.0.1:5050/lora-tb/admin/init`
+`curl http://127.0.0.1:5050/admin/init`
 
 You can force the device alignment procedure by calling the following HTTP endpoint
 
-`curl http://127.0.0.1:5050/lora-tb/admin/lora/device/refresh`
+`curl http://127.0.0.1:5050/admin/lora/device/refresh`
