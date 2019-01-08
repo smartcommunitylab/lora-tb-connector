@@ -1,5 +1,6 @@
 package it.smartcommunitylab.loratb.core;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import it.smartcommunitylab.loratb.exception.HttpException;
 import it.smartcommunitylab.loratb.ext.lora.LoraManager;
@@ -108,7 +110,7 @@ public class DataManager implements MqttMessageListener {
 						Utils.isNotEmpty(device.getTbId())) {
 					//send telemetry
 					long timestamp = rootNode.get("timestamp").asLong();
-					JsonNode objectNode = rootNode.get("object");
+					JsonNode objectNode = convertUplink(rootNode);
 					tbManager.sendTelemetry(device, objectNode, timestamp);
 					//TODO move log to debug level
 					if(logger.isInfoEnabled()) {
@@ -131,6 +133,72 @@ public class DataManager implements MqttMessageListener {
 		}
 	}
 	
+	private JsonNode convertUplink(JsonNode rootNode) {
+		ObjectNode uplinkNode = mapper.createObjectNode();
+		uplinkNode.put("applicationID", rootNode.get("applicationID").asText());
+		uplinkNode.put("applicationName", rootNode.get("applicationName").asText());
+		uplinkNode.put("deviceName", rootNode.get("deviceName").asText());
+		uplinkNode.put("devEUI", rootNode.get("devEUI").asText());
+		uplinkNode.put("adr", rootNode.get("adr").asBoolean());
+		uplinkNode.put("fCnt", rootNode.get("fCnt").asInt());
+		uplinkNode.put("fPort", rootNode.get("fPort").asInt());
+		if(rootNode.hasNonNull("rxInfo")) {
+			int count = 0;
+			for(final JsonNode objNode : rootNode.get("rxInfo")) {
+				String fieldGatewayID = "rxInfo_" + count + "_gatewayID";
+				String fieldName = "rxInfo_" + count + "_name";
+				String fieldTime = "rxInfo_" + count + "_time";
+				String fieldRssi = "rxInfo_" + count + "_rssi";
+				String fieldLoRaSNR = "rxInfo_" + count + "_loRaSNR";
+				String fieldLatitude = "rxInfo_" + count + "_location_latitude";
+				String fieldLongitude = "rxInfo_" + count + "_location_longitude";
+				String fieldAltitude = "rxInfo_" + count + "_location_altitude";
+				if(objNode.hasNonNull("gatewayID")) {
+					uplinkNode.put(fieldGatewayID, objNode.get("gatewayID").asText());
+				}
+				if(objNode.hasNonNull("name")) {
+					uplinkNode.put(fieldName, objNode.get("name").asText());
+				}
+				if(objNode.hasNonNull("time")) {
+					uplinkNode.put(fieldTime, objNode.get("time").asText());
+				}
+				if(objNode.hasNonNull("rssi")) {
+					uplinkNode.put(fieldRssi, objNode.get("rssi").asInt());
+				}
+				if(objNode.hasNonNull("loRaSNR")) {
+					uplinkNode.put(fieldLoRaSNR, objNode.get("loRaSNR").asInt());
+				}
+				if(objNode.hasNonNull("location")) {
+					uplinkNode.put(fieldLatitude, objNode.get("location").get("latitude").asDouble());
+					uplinkNode.put(fieldLongitude, objNode.get("location").get("longitude").asDouble());
+					uplinkNode.put(fieldAltitude, objNode.get("location").get("altitude").asDouble());
+				}
+			}
+		}
+		if(rootNode.hasNonNull("txInfo")) {
+			uplinkNode.put("txInfo_frequency", rootNode.get("txInfo").get("frequency").asLong());
+			uplinkNode.put("txInfo_dr", rootNode.get("txInfo").get("dr").asInt());
+		}
+		JsonNode objectNode = rootNode.get("object");
+		Iterator<String> fieldNames = objectNode.fieldNames();
+		while (fieldNames.hasNext()) {
+			String filedName = fieldNames.next();
+			JsonNode jsonNode = objectNode.get(filedName);
+			if(jsonNode.isTextual()) {
+				uplinkNode.put("object_" + filedName, objectNode.get(filedName).asText());
+			} else if(jsonNode.isBoolean()) {
+				uplinkNode.put("object_" + filedName, objectNode.get(filedName).asBoolean());
+			} else if(jsonNode.isDouble() || jsonNode.isFloat()) {
+				uplinkNode.put("object_" + filedName, objectNode.get(filedName).asDouble());
+			} else if(jsonNode.canConvertToInt()) {
+				uplinkNode.put("object_" + filedName, objectNode.get(filedName).asInt());
+			} else if(jsonNode.canConvertToLong()) {
+				uplinkNode.put("object_" + filedName, objectNode.get(filedName).asLong());
+			}
+		}
+		return uplinkNode;
+	}
+
 	private String getTbTenantId() {
 		List<User> list = userRepository.findAll();
 		if(list.size() > 0) {
