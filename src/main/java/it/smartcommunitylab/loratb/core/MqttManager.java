@@ -35,6 +35,7 @@ public class MqttManager {
 		String clientId = Utils.getUUID();
 		mqttClient = new MqttClient(endpoint, clientId, new MemoryPersistence());
 		MqttConnectOptions options = new MqttConnectOptions();
+		options.setKeepAliveInterval(0);
 		options.setAutomaticReconnect(true);
 		options.setCleanSession(true);
 		options.setConnectionTimeout(15);
