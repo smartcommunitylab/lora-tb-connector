@@ -1,8 +1,11 @@
 package it.smartcommunitylab.loratb.core;
 
 import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +41,33 @@ public class MqttManager {
 		options.setKeepAliveInterval(0);
 		options.setAutomaticReconnect(true);
 		options.setCleanSession(true);
-		options.setConnectionTimeout(15);
+		options.setConnectionTimeout(0);
 		options.setUserName(user);
 		options.setPassword(password.toCharArray());
+		
+		mqttClient.setCallback(new MqttCallbackExtended() {
+			
+			@Override
+			public void messageArrived(String topic, MqttMessage message) throws Exception {
+			}
+			
+			@Override
+			public void deliveryComplete(IMqttDeliveryToken token) {
+			}
+			
+			@Override
+			public void connectionLost(Throwable cause) {
+				logger.warn(String.format("MQTT connectionLost: %s", cause));
+			}
+			
+			@Override
+			public void connectComplete(boolean reconnect, String serverURI) {
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("MQTT connectComplete: %s - %s", serverURI, reconnect));
+				}
+			}
+		});
+		
 		mqttClient.connect(options);
 		if(logger.isInfoEnabled()) {
 			logger.info("MQTT connected:" + endpoint);
