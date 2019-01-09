@@ -49,6 +49,10 @@ public class MqttManager {
 			
 			@Override
 			public void messageArrived(String topic, MqttMessage message) throws Exception {
+			//TODO move log to debug level
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("MQTT messageArrived: %s", message.getId()));
+				}
 			}
 			
 			@Override
