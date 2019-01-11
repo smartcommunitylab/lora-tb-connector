@@ -38,10 +38,10 @@ public class MqttManager {
 		String clientId = Utils.getUUID();
 		mqttClient = new MqttClient(endpoint, clientId, new MemoryPersistence());
 		MqttConnectOptions options = new MqttConnectOptions();
-		options.setKeepAliveInterval(0);
+		options.setKeepAliveInterval(120);
 		options.setAutomaticReconnect(true);
 		options.setCleanSession(true);
-		options.setConnectionTimeout(0);
+		options.setConnectionTimeout(30);
 		options.setUserName(user);
 		options.setPassword(password.toCharArray());
 		
@@ -49,9 +49,12 @@ public class MqttManager {
 			
 			@Override
 			public void messageArrived(String topic, MqttMessage message) throws Exception {
-			//TODO move log to debug level
+				//TODO move log to debug level
 				if(logger.isInfoEnabled()) {
-					logger.info(String.format("MQTT messageArrived: %s", message.getId()));
+					logger.info(String.format("MQTT messageArrived: %s - %s", message.getId(), topic));
+				}
+				if(messageListener != null) {
+					messageListener.onMessage(topic, message);
 				}
 			}
 			
@@ -73,17 +76,15 @@ public class MqttManager {
 		});
 		
 		mqttClient.connect(options);
-		if(logger.isInfoEnabled()) {
-			logger.info("MQTT connected:" + endpoint);
-		}
-		mqttClient.subscribe(topic, (topic, msg) -> {
-			if(logger.isDebugEnabled()) {
-				logger.debug("receiveMesage:" + msg.getId());
-			}
-			if(messageListener != null) {
-				messageListener.onMessage(topic, msg);
-			}
-		});
+		mqttClient.subscribe(topic);
+//		mqttClient.subscribe(topic, (topic, msg) -> {
+//			if(logger.isDebugEnabled()) {
+//				logger.debug("receiveMesage:" + msg.getId());
+//			}
+//			if(messageListener != null) {
+//				messageListener.onMessage(topic, msg);
+//			}
+//		});
 	}
 
 	public MqttMessageListener getMessageListener() {
