@@ -5,7 +5,9 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,11 +74,19 @@ public class MqttManager {
 				if(logger.isInfoEnabled()) {
 					logger.info(String.format("MQTT connectComplete: %s - %s", serverURI, reconnect));
 				}
+				try {
+					mqttClient.subscribe(topic);
+					logger.info("MQTT suscribe to " + topic);
+				} catch (MqttSecurityException e) {
+					logger.error(e.getMessage());
+				} catch (MqttException e) {
+					logger.error(e.getMessage());
+				}
 			}
 		});
 		
 		mqttClient.connect(options);
-		mqttClient.subscribe(topic);
+		
 //		mqttClient.subscribe(topic, (topic, msg) -> {
 //			if(logger.isDebugEnabled()) {
 //				logger.debug("receiveMesage:" + msg.getId());
