@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  lora-tb-connector:
+    image: smartcommunitylab/lora-tb-connector:latest
+    container_name: lora-tb-connector
+    ports:
+      - 5050:5050
+    env_file:
+      - ./lora-tb-connector.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+  tb-mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
