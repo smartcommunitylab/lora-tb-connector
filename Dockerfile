@@ -3,10 +3,10 @@ COPY . /tmp
 WORKDIR /tmp
 RUN mvn install
 
-FROM store/oracle/serverjre:8
+FROM openjdk:8-jdk-alpine
 ARG VER=0.1
 ENV FOLDER=/tmp/target
 ENV APP=lora-tb-connector-${VER}.jar
 COPY --from=mvn ${FOLDER}/${APP} /tmp/target/
 WORKDIR /tmp/target/
-CMD [ "sh", "-c", "java -Xms32m -Xmx64m -jar ${APP}" ]
+CMD [ "sh", "-c", "java -jar ${APP}" ]
