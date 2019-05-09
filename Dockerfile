@@ -3,7 +3,7 @@ COPY . /tmp
 WORKDIR /tmp
 RUN mvn install
 
-FROM adoptopenjdk/openjdk8:alpine
+FROM openjdk:8-alpine
 ARG VER=0.1
 ENV FOLDER=/tmp/target
 ENV APP=lora-tb-connector-${VER}.jar
